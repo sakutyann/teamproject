@@ -13,17 +13,13 @@ from django.views import View
 from formapp.models import Quest  # Questモデルをインポート
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+from userquest.models import UserQuestNow, QuestSubMission
 
 
 
-def questnowformworldfunction(request):
-          return render(request, 'questnow.html')
 
 def questnotformworldfunction(request):
           return render(request, 'questnot.html')
-
-def questdoformworldfunction(request):
-          return render(request, 'questdo.html')
 
 def questgoformworldfunction(request):
           return render(request, 'questgo.html')
@@ -42,10 +38,19 @@ class QuestGoView(View):
         quest = Quest.objects.get(pk=kwargs['pk'])
         # 現在のクエストに紐づくお題を取得
         quest_registers = quest.quest_registers.all()
-        print(quest_registers)
+        
+        # 'register_id'を安全に取得
+        register_id = kwargs.get('register_id')
+        if register_id:
+          register = QuestRegister.objects.get(id=register_id)
+        else:
+          register = None
+        print(register_id)
         # 共通のコンテキストを返す
         return {
             'quest': quest,  # クエスト情報
+            'register_id' : register_id,
+            'register' : register,
             'quest_registers': quest_registers,  # お題情報
         }
         
@@ -96,6 +101,14 @@ class QuestGoView(View):
                     # 成功した場合
                     print('判定：成功')
                     print(request, latitude, longitude, context)
+                    # 対応する `QuestSubMission` をクリア済みにする
+                    register_id = QuestRegister.objects.filter(id=kwargs.get('register_id')).first()
+                    if not register_id:
+                      raise ValueError("指定されたregister_idに該当するQuestRegisterが見つかりません。")
+                    QuestSubMission.objects.filter(
+                        quest_register_id=register_id.id
+                    ).update(completed=True)
+
                     return render(request, self.template_names_yes,context)
                 else:
                     # 照合失敗
@@ -152,6 +165,47 @@ class QuestFinView(View):
         'quest_registers': quest_registers,  # お題情報
         }
     return render(request, self.template_name, context) 
+
+class QuestNowView(View):
+    """進行中クエスト一覧ページのビュー"""
+    template_name = "questnow.html"
+
+    def get(self, request, *args, **kwargs):
+        # 現在ログインしているユーザーを取得
+        user = request.user
+
+        if not user.is_authenticated:
+            # 未ログインならリダイレクトやエラー処理
+            return render(request, "login.html", {"error": "ログインしてください。"})
+
+        # ログインユーザーの進行中クエストを取得
+        user_quests = UserQuestNow.objects.filter(user=user, completed=False)
+
+        # 都道府県ごとにクエストを分類
+        prefectures = {}
+        for user_quest in user_quests:
+            quest = user_quest.quest  # 外部キーからクエスト情報を取得
+            prefecture_key = quest.prefecture
+
+            # 都道府県のキーが未登録なら初期化
+            if prefecture_key not in prefectures:
+                prefectures[prefecture_key] = []
+
+            # 該当する都道府県にクエストを追加
+            prefectures[prefecture_key].append({
+                "id": quest.id,
+                "title": quest.title,
+                "description": quest.description,
+                "completed": user_quest.completed,
+            })
+
+        # コンテキストデータの構築
+        context = {
+            'username': user.username,
+            'prefectures': prefectures,  # 都道府県別に分けたクエストデータ
+        }
+
+        return render(request, self.template_name, context)
 
 
 
@@ -211,9 +265,6 @@ def coupon_complete(request, coupon_id):
     # couponend.html に遷移
     return render(request, 'couponend.html', {'coupon': user_coupon})
 
-# クエスト挑戦画面
-def quest_challenge_view(request):
-  return render(request, 'quest_challenge.html')
 
 
 

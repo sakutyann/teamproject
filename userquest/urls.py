@@ -3,11 +3,10 @@ from . import views
  
 app_name = 'userquest'
  
-urlpatterns = [path('questnow/', views.questnowformworldfunction, name='questnow'),
+urlpatterns = [path('questnow/', views.QuestNowView.as_view(), name='questnow'),
                path('questnot/', views.questnotformworldfunction, name='questnot'),
             #    path('questdo/', views.questdoformworldfunction, name='questdo'),
-               path('quest_challenge/', views.quest_challenge_view, name='quest_challenge'),
-               path('questgo/<int:pk>/', views.QuestGoView.as_view(), name='questgo'),              
+               path('questgo/<int:pk>/<int:register_id>/', views.QuestGoView.as_view(), name='questgo'),              
                path('questgo/', views.QuestGoView.as_view(), name='questgo'),
                path('questyes/<int:pk>/', views.QuestYesView.as_view(), name='questyes'),# クエスト挑戦画面
                path('questyes/', views.QuestYesView.as_view(), name='questyes'),#クエスト挑戦画面

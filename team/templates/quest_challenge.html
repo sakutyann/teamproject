@@ -144,13 +144,16 @@
       {% endfor %}
         </div>
     </div>
-    <form action="{% url 'team:quest_detail' pk=quest.pk %}">
-    <button class="challenge-button">このクエストに挑戦！！！</button>
+    <form method="post" action="{% url 'team:quest_detail' quest.id %}">
+      {% csrf_token %}
+    <button class="challenge-button">このクエストに挑戦！！</button>
     </form>
   </div>
 
   <!-- 戻るボタン -->
-  <button class="back-button" onclick="window.history.back();">戻る</button>
+  <form action="{%url 'team:main'%}">
+  <button class="back-button">戻る</button>
+  </form>
 </body>
 </html>
 

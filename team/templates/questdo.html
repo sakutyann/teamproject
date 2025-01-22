@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>クエスト詳細画面</title>
+  <title>お題一覧</title>
   <style>
     * {
       margin: 0;
@@ -96,13 +96,29 @@
     .button:hover {
       background-color: #f0c040;
     }
-
     .back-button {
-      background-color: #f0c040;
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      padding: 12px 20px;
+      font-size: 1.1em;
+      color: #f5f5f5;
+      background-color: #282c34;
+      border: 2px solid #ffd700;
+      border-radius: 8px;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      z-index: 10;
     }
 
     .back-button:hover {
-      background-color: #ffd700;
+      background-color: #444;
+    }
+
+    .back-button:active {
+      background-color: #333;
     }
 
     .complete-button {
@@ -119,7 +135,7 @@
   <!-- メインコンテンツ -->
   <div class="content">
     <!-- クエスト詳細 -->
-    <h1>クエスト詳細</h1>
+    <h1>お題一覧</h1>
     <p class="description"><strong>内容:</strong>{{ quest.description }}</p>
     <p class="description"><strong>期限:</strong>{{ quest.deadline }}</p>
     <p class="description"><strong>依頼者:</strong>{{ quest.requester }}</p>
@@ -130,7 +146,7 @@
 
     <!-- お題詳細 -->
     {% for register in quest_registers %}
-      <a href="{% url 'userquest:questgo' pk=quest.pk %}" class="photo-link">
+      <a href="{% url 'userquest:questgo' pk=quest.pk register_id=register.id %}" class="photo-link">
         <div class="photo-item">
           <h2>{{ forloop.counter }}. {{ register.name }}</h2>
           <p>{{ register.additional_notes }}</p>
@@ -142,22 +158,16 @@
 
     <!-- 完了ボタンと戻るボタン -->
     <div class="buttons">
-      <a href="{% url 'userquest:questfin'%}"class="button complete-button">ご褒美</a>
-      <!-- <a href="{% url 'userquest:questnow' %}" class="button back-button">戻る</a> -->
-      <button class="button back-button" onclick="cancelLogout()">戻る</button>
-
+      <!-- お題をすべてクリアしたらボタンを表示 -->
+      {% if all_completed %}
+      <a href="{% url 'userquest:questfin' %}" class="button complete-button">報酬獲得</a>
+      {% else %}
+      <p>すべてのお題を完了すると報酬が獲得できます。</p>
+      {% endif %}
+      <a href="{% url 'team:main' %}" class="button back-button">戻る</a>
     </div>
   </div>
-
-
-
 </div>
 </div>
-
-<script>
-function cancelLogout() {
-  window.history.back(); // 前の画面に戻る
-}
-</script>
 </body>
 </html>

@@ -1,7 +1,11 @@
-from django.shortcuts import render
 from django.views import View 
-from formapp.models import Quest  # Questモデルをインポート
+from formapp.models import Quest, QuestRegister  # Questモデルをインポート
 from formapp.forms import QuestModelForm  # QuestModelFormをインポート
+from userquest.models import UserQuestNow, QuestSubMission
+from django.shortcuts import redirect, get_object_or_404, render
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 class MainView(View):
     """クエスト一覧ページのビュー"""
@@ -36,7 +40,7 @@ class MainView(View):
     
 
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class QuestDetailView(View):
     """クエスト詳細ページのビュー"""
     template_name = "questdo.html"
@@ -44,10 +48,15 @@ class QuestDetailView(View):
     def get(self, request, *args, **kwargs):
         # クエストの主キーを取得
         quest = Quest.objects.get(pk=kwargs['pk'])
+
         # 現在のクエストに紐づくお題を取得
         quest_registers = quest.quest_registers.all()
         print(quest)
-        
+        # すべてのお題が完了しているか確認
+        all_completed = QuestSubMission.objects.filter(
+            quest=quest, completed=False
+        ).exists()
+               
          # 報酬IDを文字列に変換
         reward_mapping = {
             1: "3%OFF",
@@ -72,9 +81,47 @@ class QuestDetailView(View):
         context = {
             'quest': quest, #クエスト情報
             'quest_registers': quest_registers,  # お題情報
+            'all_completed': not all_completed,  # 全て完了していれば True
         }
         
         return render(request, self.template_name, context) 
+    
+    def post(self, request, *args, **kwargs):
+      """挑戦ボタン押下時の処理"""
+      # クエストの主キーを取得
+      quest = get_object_or_404(Quest, pk=kwargs['pk'])
+      # 現在のクエストに紐づくお題を取得
+      quest_registers = quest.quest_registers.all()
+      print(quest)
+
+      # 未登録のお題を `QuestSubMission` に登録
+      for register in quest_registers:
+          QuestSubMission.objects.get_or_create(
+              quest=quest,
+              quest_register=register
+          )
+
+
+      # ユーザーが既にこのクエストを登録済みか確認
+      user_quest, created = UserQuestNow.objects.get_or_create(
+          user=request.user,
+          quest=quest
+      )
+      print('created:',created)
+      # クエスト詳細ページを表示
+      context = {
+          'quest': quest, #クエスト情報
+          'quest_registers': quest_registers,  # お題情報
+      }
+
+      if created:
+          # 新規登録の場合の処理
+          return render(request, self.template_name, context)
+      else:
+          # 既に挑戦済みの場合の処理
+          return render(request, self.template_name, context)
+
+
     
     
 
@@ -89,11 +136,13 @@ def couponformworldfunction(request):
 
 
 # クエスト挑戦画面
+@method_decorator(csrf_exempt, name='dispatch')
 class QuestChallengeView(View):
     """クエスト挑戦ページのビュー"""
     template_name = "quest_challenge.html"
     def get(self, request, *args, **kwargs):
         # クエストの主キーを取得
+        quest = get_object_or_404(Quest, pk=kwargs['pk'])
         quest = Quest.objects.get(pk=kwargs['pk'])
         # 現在のクエストに紐づくお題を取得
         quest_registers = quest.quest_registers.all()
@@ -127,72 +176,20 @@ class QuestChallengeView(View):
         }
         return render(request, self.template_name, context) 
 
-    
-    
+    def post(self, request, *args, **kwargs):
+        """挑戦ボタン押下時の処理"""
+        # クエストの主キーを取得
+        quest = get_object_or_404(Quest, pk=kwargs['pk'])
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-
-# def couponuseformworldfunction(request):
-#           return render(request, 'couponuse.html')
-
-# def couponendformworldfunction(request):
-#           return render(request, 'couponend.html')
-
-# def couponpastformworldfunction(request):
-#           return render(request, 'couponpast.html')
-
-# def questlookformworldfunction(request):
-#           return render(request, 'questlook.html')
-
-# def couponnotformworldfunction(request):
-#           return render(request, 'couponnot.html')
-
-# def questokformworldfunction(request):
-#           return render(request, 'questok.html')
-
-# def questerformworldfunction(request):
-#           return render(request, 'quester.html')
-
-# def newaccountformworldfunction(request):
-#           return render(request, 'newaccount.html')
-
-# 進行中クエスト
-# def questnowformworldfunction(request):
-#           return render(request, 'questnow.html')
-
-# def questnotformworldfunction(request):
-#           return render(request, 'questnot.html')
-
-# def questdoformworldfunction(request):
-#           return render(request, 'questdo.html')
-
-# def questgoformworldfunction(request):
-#           return render(request, 'questgo.html')
-
-# def questyesformworldfunction(request):
-#           return render(request, 'questyes.html')
-
-# def questoutformworldfunction(request):
-#           return render(request, 'questout.html')
-
-
-# def questfinformworldfunction(request):
-#           return render(request, 'questfin.html')
-
-
+        # ユーザーが既にこのクエストを登録済みか確認
+        user_quest, created = UserQuestNow.objects.get_or_create(
+            user=request.user,
+            quest=quest
+        )
+        print('created:',created)
+        if created:
+            # 新規登録の場合の処理
+            return redirect('quest_detail', pk=kwargs['pk'])
+        else:
+            # 既に挑戦済みの場合の処理
+            return redirect('quest_detail', pk=kwargs['pk'])

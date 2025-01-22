@@ -35,9 +35,26 @@ class PhotoSubmission(models.Model):
 
 
 # お題テーブル
+# class QuestSubMission(models.Model):
+#     quest_register = models.ForeignKey(
+#         'formapp.QuestRegister',  # アプリ名とモデル名を指定
+#         on_delete=models.CASCADE,
+#         verbose_name="クエスト詳細"
+#     )
+#     completed = models.BooleanField(default=False, verbose_name="完了判定")
+
+#     def __str__(self):
+#         return f"{self.quest_register.name} (Completed: {self.completed})"
+      
+      
 class QuestSubMission(models.Model):
+    quest = models.ForeignKey(
+        'formapp.Quest',  # クエストとの関連付け
+        on_delete=models.CASCADE,
+        verbose_name="クエスト",
+    )
     quest_register = models.ForeignKey(
-        'formapp.QuestRegister',  # アプリ名とモデル名を指定
+        'formapp.QuestRegister',  # お題との関連付け
         on_delete=models.CASCADE,
         verbose_name="クエスト詳細"
     )
