@@ -15,6 +15,8 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from userquest.models import UserQuestNow, QuestSubMission
 
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.timezone import now
 
 
 
@@ -78,7 +80,7 @@ class QuestGoView(View):
               geotags = get_geotagging(exif_data)
               coordinates = get_coordinates(geotags)
 
-              print('iamge:',image,',exif_data:',exif_data,',geotags:',geotags,',coordinates:',coordinates)
+            #   print('iamge:',image,',exif_data:',exif_data,',geotags:',geotags,',coordinates:',coordinates)
               if coordinates and len(coordinates) == 2:  # 緯度と経度の両方が存在する場合のみ
                 latitude, longitude = coordinates
                 PhotoSubmission.objects.create(
@@ -154,17 +156,8 @@ class QuestOutView(View):
         }
     return render(request, self.template_name, context) 
 
-class QuestFinView(View):
-  template_name = "questfin.html"
-  def get(self, request, *args, **kwargs):
-    quest = Quest.objects.get(pk=kwargs['pk'])
-    quest_registers = quest.quest_resigters.all()
-    print(quest)
-    context = {
-        'quest': quest, #クエスト情報
-        'quest_registers': quest_registers,  # お題情報
-        }
-    return render(request, self.template_name, context) 
+def quest_fin(request):
+    print("yes")
 
 class QuestNowView(View):
     """進行中クエスト一覧ページのビュー"""
@@ -207,6 +200,39 @@ class QuestNowView(View):
 
         return render(request, self.template_name, context)
 
+class QuestFinView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        # クリアしたクエストのIDを受け取る
+        quest_id = request.POST.get("quest_id")
+        
+        try:
+            # 対象のクエストを取得
+            quest = Quest.objects.get(id=quest_id)
+            
+            # クーポン情報を作成
+            coupon = Coupon.objects.create(
+                quest_id=quest,
+                coupon_description=f"{quest.title} の報酬クーポン",
+                used_at=now()  # 使用期限を現在時刻にする例 (適宜変更)
+            )
+            
+            # ユーザークーポンを作成
+            user_coupon = UserCoupon.objects.create(
+                user_account_id=request.user,
+                coupon_id=coupon,
+                coupon_status=False,  # 初期状態は未使用
+            )
+            
+            # 成功メッセージを表示
+            return render(request, "questfin.html", {"user_coupon_id": user_coupon.user_coupon_id})
+        
+        except Quest.DoesNotExist:
+            # クエストが存在しない場合のエラーハンドリング
+            return render(request, "questfin.html", {"error": "クエストが見つかりませんでした。"})
+
+        except Exception as e:
+            # その他のエラーを処理
+            return render(request, "questfin.html", {"error": "クーポンの発行中にエラーが発生しました。"})
 
 
 @login_required
@@ -252,7 +278,8 @@ def coupon_use(request, coupon_id):
 
 def used_coupons(request):
     coupons = UserCoupon.objects.filter(user_account_id=request.user, coupon_status=True)
-    return render(request, 'couponpast.html', {'coupon': coupons})
+    print(coupons)
+    return render(request, 'couponpast.html', {'coupons': coupons})
 
 def coupon_complete(request, coupon_id):
     # UserCoupon のインスタンスを取得

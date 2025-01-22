@@ -91,23 +91,21 @@
   </style>
 </head>
 <body>
-
   <div class="content">
-    <!-- クエストクリアメッセージ -->
-    <h1>クエストクリア！</h1>
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% else %}
+      <h1>クエストクリア！</h1>
+      <p class="description">素晴らしい成果！新しいクーポンをゲットしました。</p>
+      <p class="coupon-code">クーポンID: {{ coupon_code }}</p>
+      
+      <!-- クーポン一覧ページへのボタン -->
+      <button onclick="window.location.href='{% url 'userquest:coupon' %}'" class="cta-button">クーポン一覧を見る</button>
 
-  
-
-    <!-- クーポン獲得の説明 -->
-    <p class="description">素晴らしい成果！新しいクーポンをゲットしました。クーポンコードを使って、次回のお買い物で割引を受けましょう。</p>
-
-    <!-- クーポンコード -->
-    <p class="coupon-code">クーポンコード: WIN2024</p>
-
-    <!-- 詳細ボタン -->
-    <button class="cta-button" onclick="window.location.href='coupon_details_page'">クーポンの詳細を見る</button>
+      <!-- クエスト一覧ページへのボタン -->
+      <button onclick="window.location.href='{% url 'userquest:questnow' %}'" class="cta-button">クエスト一覧に戻る</button>
+    {% endif %}
   </div>
-
 </body>
 </html>
 
