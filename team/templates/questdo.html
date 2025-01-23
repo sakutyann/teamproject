@@ -158,9 +158,14 @@
 
     <!-- 完了ボタンと戻るボタン -->
     <div class="buttons">
-      <!-- お題をすべてクリアしたらボタンを表示 -->
+      <!-- すべてのクエストを完了した場合に表示される -->
       {% if all_completed %}
-      <a href="{% url 'userquest:questfin' %}" class="button complete-button">報酬獲得</a>
+      <form action="{% url 'userquest:questfin' %}" method="post">
+        {% csrf_token %}
+        <!-- quest_idをhiddenフィールドとして送信 -->
+        <input type="hidden" name="quest_id" value="{{ quest.id }}">
+        <button type="submit" class="button complete-button">報酬獲得</button>
+      </form>
       {% else %}
       <p>すべてのお題を完了すると報酬が獲得できます。</p>
       {% endif %}
