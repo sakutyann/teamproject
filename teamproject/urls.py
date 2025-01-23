@@ -22,7 +22,7 @@ urlpatterns = [
     path('',include('team.urls')),
     # 追加
     path('accounts/', include('accounts.urls')),
-    path('uesrquest/', include('userquest.urls', namespace='userquest')),
+    path('userquest/', include('userquest.urls', namespace='userquest')),
     path('formapp/', include('formapp.urls')),
     
 ]

@@ -97,7 +97,7 @@
     {% else %}
       <h1>クエストクリア！</h1>
       <p class="description">素晴らしい成果！新しいクーポンをゲットしました。</p>
-      <p class="coupon-code">クーポンID: {{ coupon_code }}</p>
+      <p class="coupon-code">クーポンID: {{ user_coupon_id }}</p>
       
       <!-- クーポン一覧ページへのボタン -->
       <button onclick="window.location.href='{% url 'userquest:coupon' %}'" class="cta-button">クーポン一覧を見る</button>

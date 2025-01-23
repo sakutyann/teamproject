@@ -200,39 +200,34 @@ class QuestNowView(View):
 
         return render(request, self.template_name, context)
 
-class QuestFinView(LoginRequiredMixin, View):
+class QuestFinView(View):
     def post(self, request, *args, **kwargs):
-        # クリアしたクエストのIDを受け取る
-        quest_id = request.POST.get("quest_id")
-        
+        # POSTで送られてきた quest_id を取得
+        quest_id = request.POST.get('quest_id')
+
+        # クエストを取得
         try:
-            # 対象のクエストを取得
             quest = Quest.objects.get(id=quest_id)
             
-            # クーポン情報を作成
+            # クーポンの発行処理
             coupon = Coupon.objects.create(
                 quest_id=quest,
                 coupon_description=f"{quest.title} の報酬クーポン",
-                used_at=now()  # 使用期限を現在時刻にする例 (適宜変更)
+                used_at=now()  # 使用期限を設定（例）
             )
             
-            # ユーザークーポンを作成
+            # ユーザーに関連するクーポンを作成
             user_coupon = UserCoupon.objects.create(
                 user_account_id=request.user,
                 coupon_id=coupon,
                 coupon_status=False,  # 初期状態は未使用
             )
-            
-            # 成功メッセージを表示
-            return render(request, "questfin.html", {"user_coupon_id": user_coupon.user_coupon_id})
-        
-        except Quest.DoesNotExist:
-            # クエストが存在しない場合のエラーハンドリング
-            return render(request, "questfin.html", {"error": "クエストが見つかりませんでした。"})
 
-        except Exception as e:
-            # その他のエラーを処理
-            return render(request, "questfin.html", {"error": "クーポンの発行中にエラーが発生しました。"})
+            # 報酬獲得後に結果を表示するページへリダイレクト
+            return render(request, "questfin.html", {"user_coupon_id": user_coupon.user_coupon_id})
+        except Quest.DoesNotExist:
+            # クエストが見つからない場合の処理
+            return redirect('userquest:questnow')
 
 
 @login_required
